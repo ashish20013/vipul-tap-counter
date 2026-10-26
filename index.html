@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Custom Tap Counter</title>
+<style>
+  /* ================= BASE & VARIABLES ================= */
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+  :root {
+    /* Default Rich Red Background */
+    --app-bg: #9e0b0b;
+    --heading-color: #ffffff;
+    --card-border: #4CAF50; 
+    --btn-bg: #2e7d32;      
+    --btn-text: #ffffff;    
+    --img-border: #4CAF50;  
+  }
+
+  body {
+    background-color: var(--app-bg);
+    color: var(--heading-color);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 10px 20px 10px;
+    transition: background-color 0.3s;
+  }
+
+  /* ================= HEADER ================= */
+  .header {
+    width: 100%;
+    max-width: 1200px;
+    text-align: center;
+    margin-bottom: 15px;
+    position: relative;
+    padding-top: 10px;
+  }
+
+  h1 {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-weight: 700;
+    outline: none;
+    padding: 5px 10px;
+    border-radius: 8px;
+    transition: background 0.3s;
+  }
+
+  h1:focus { background: rgba(255,255,255,0.1); }
+  h1:empty:before { content: "Click to add heading"; color: rgba(255,255,255,0.5); }
+
+  /* ================= GRID & CARDS ================= */
+  .grid {
+    display: grid;
+    gap: 15px;
+    width: 100%;
+    max-width: 1200px;
+    /* Makes the grid take up the remaining screen height */
+    min-height: calc(100vh - 100px); 
+    transition: grid-template-columns 0.3s;
+  }
+
+  .card {
+    border: 4px solid var(--card-border);
+    border-radius: 20px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    background: rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(5px);
+    position: relative;
+    animation: fadeIn 0.4s ease-out;
+    height: 100%;
+  }
+
+  /* Image Frame - Stretches to fill space */
+  .img-frame {
+    flex: 1; /* Takes up all available vertical space */
+    width: 100%;
+    min-height: 200px;
+    border: 4px solid var(--img-border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.1);
+    position: relative;
+    cursor: pointer;
+    transition: 0.3s;
+  }
+  .img-frame:hover { opacity: 0.8; }
+  .img-frame img { width: 100%; height: 100%; object-fit: cover; }
+  .img-frame span { font-size: 1rem; color: rgba(255,255,255,0.7); text-align: center; padding: 10px; }
+
+  /* Number Box (For Template 2) */
+  .number-box {
+    flex: 1;
+    width: 100%;
+    min-height: 200px;
+    border: 4px solid var(--img-border);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(4rem, 15vw, 10rem);
+    font-weight: 900;
+    color: var(--heading-color);
+    background: rgba(0,0,0,0.3);
+  }
+
+  /* ================= BUTTONS ================= */
+  .tap-btn {
+    width: 100%;
+    border: 4px solid var(--card-border);
+    border-radius: 20px; 
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    
+    /* Massive Number Size */
+    font-size: clamp(3rem, 12vw, 7rem); 
+    font-weight: 900;
+    padding: 15px 10px;
+    line-height: 1.1;
+    
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.2s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tap-btn:active {
+    transform: scale(0.95);
+  }
+
+  /* Template 2: Tricky Vote Button */
+  .vote-btn {
+    border-radius: 15px;
+    font-size: clamp(1.5rem, 5vw, 3rem); 
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    box-shadow: 0 8px 0 var(--card-border);
+    flex-direction: column;
+  }
+  .vote-btn:active {
+    transform: translateY(8px);
+    box-shadow: 0 0 0 var(--card-border);
+  }
+
+  /* Template 3: Round Tally Button */
+  .circle-btn {
+    width: clamp(180px, 35vw, 300px);
+    height: clamp(180px, 35vw, 300px);
+    border-radius: 50%;
+    font-size: clamp(3rem, 10vw, 6rem);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    margin-top: 10px;
+    padding: 0;
+  }
+
+  /* Floating +1 Animation */
+  .plus-one {
+    position: absolute;
+    color: var(--btn-text);
+    font-weight: 900;
+    font-size: clamp(2rem, 8vw, 4rem);
+    pointer-events: none;
+    animation: floatUp 0.8s ease-out forwards;
+    text-shadow: 0 0 10px rgba(0,0,0,0.5);
+  }
+
+  /* ================= INVISIBLE SETTINGS BUTTON ================= */
+  .settings-toggle {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: none;
+    z-index: 100;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* The Tiny Faint Dot */
+  .settings-toggle::after {
+    content: "";
+    width: 8px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.15); /* Barely visible */
+    border-radius: 50%;
+    transition: 0.3s;
+  }
+
+  .settings-toggle:hover::after,
+  .settings-toggle:active::after {
+    background: rgba(255, 255, 255, 0.8);
+    transform: scale(1.5);
+  }
+
+  /* ================= SETTINGS PANEL ================= */
+  .settings-panel {
+    position: fixed;
+    top: 0;
+    right: -350px;
+    width: 320px;
+    height: 100%;
+    background: #1a1a1a;
+    color: #fff;
+    padding: 25px;
+    overflow-y: auto;
+    transition: right 0.3s ease;
+    z-index: 99;
+    box-shadow: -5px 0 20px rgba(0,0,0,0.5);
+  }
+  .settings-panel.open { right: 0; }
+
+  .settings-panel h2 { font-size: 1.2rem; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+
+  .setting-group { margin-bottom: 15px; display: flex; flex-direction: column; gap: 5px; }
+  .setting-group label { font-size: 0.85rem; color: #aaa; }
+  
+  .setting-group input[type="color"] {
+    width: 100%; height: 40px; border: none; border-radius: 6px; cursor: pointer; background: transparent;
+  }
+  
+  .setting-group select, .setting-group input[type="number"] {
+    width: 100%; padding: 10px; border-radius: 6px; border: none; background: #333; color: white;
+  }
+
+  /* ================= ANIMATIONS ================= */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes floatUp {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.8); }
+    100% { opacity: 0; transform: translate(-50%, -150%) scale(1.5); }
+  }
+  @keyframes bump { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+  .bump { animation: bump 0.3s ease; }
+
+</style>
+</head>
+<body>
+
+  <!-- Hidden Settings Dot (Top Right Corner) -->
+  <button class="settings-toggle" id="settingsToggle"></button>
+
+  <!-- Hidden Settings Panel -->
+  <div class="settings-panel" id="settingsPanel">
+    <h2>Customize UI</h2>
+    
+    <div class="setting-group">
+      <label>Select Template</label>
+      <select id="templateSelect">
+        <option value="1">Template 1: Image & Pill Button</option>
+        <option value="2">Template 2: Number & Tricky Vote</option>
+        <option value="3">Template 3: Image & Circle Tap</option>
+      </select>
+    </div>
+
+    <div class="setting-group">
+      <label>Number of Columns</label>
+      <input type="number" id="colCount" min="1" max="6" value="2">
+    </div>
+
+    <div class="setting-group">
+      <label>Background Color</label>
+      <input type="color" id="bgColor" value="#9e0b0b">
+    </div>
+
+    <div class="setting-group">
+      <label>Heading Text Color</label>
+      <input type="color" id="headingColor" value="#ffffff">
+    </div>
+
+    <div class="setting-group">
+      <label>Card & Button Border Color</label>
+      <input type="color" id="borderColor" value="#4CAF50">
+    </div>
+
+    <div class="setting-group">
+      <label>Button Background Color</label>
+      <input type="color" id="btnBgColor" value="#2e7d32">
+    </div>
+
+    <div class="setting-group">
+      <label>Number / Text Color</label>
+      <input type="color" id="btnTextColor" value="#ffffff">
+    </div>
+
+    <div class="setting-group">
+      <label>Image Frame Border Color</label>
+      <input type="color" id="imgBorderColor" value="#4CAF50">
+    </div>
+    
+    <button id="closeSettings" style="width:100%; padding:12px; margin-top:20px; background:#e53935; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Close</button>
+  </div>
+
+  <!-- Main App -->
+  <div class="header">
+    <h1 id="mainHeading" contenteditable="true">Custom Text, Can Edit User</h1>
+  </div>
+
+  <div class="grid" id="gridContainer"></div>
+
+  <script>
+    /* ================= STATE ================= */
+    const state = {
+      template: 1,
+      columns: 2,
+      counts: [0, 0, 0, 0, 0, 0], 
+      images: [null, null, null, null, null, null] 
+    };
+
+    /* ================= DOM ELEMENTS ================= */
+    const grid = document.getElementById('gridContainer');
+    const toggleBtn = document.getElementById('settingsToggle');
+    const panel = document.getElementById('settingsPanel');
+    const closeBtn = document.getElementById('closeSettings');
+
+    /* ================= SETTINGS LOGIC ================= */
+    toggleBtn.addEventListener('click', () => panel.classList.add('open'));
+    closeBtn.addEventListener('click', () => panel.classList.remove('open'));
+
+    document.getElementById('bgColor').addEventListener('input', (e) => {
+      document.documentElement.style.setProperty('--app-bg', e.target.value);
+    });
+    document.getElementById('headingColor').addEventListener('input', (e) => {
+      document.documentElement.style.setProperty('--heading-color', e.target.value);
+    });
+    document.getElementById('borderColor').addEventListener('input', (e) => {
+      document.documentElement.style.setProperty('--card-border', e.target.value);
+    });
+    document.getElementById('btnBgColor').addEventListener('input', (e) => {
+      document.documentElement.style.setProperty('--btn-bg', e.target.value);
+    });
+    document.getElementById('btnTextColor').addEventListener('input', (e) => {
+      document.documentElement.style.setProperty('--btn-text', e.target.value);
+    });
+    document.getElementById('imgBorderColor').addEventListener('input', (e) => {
+      document.documentElement.style.setProperty('--img-border', e.target.value);
+    });
+
+    document.getElementById('colCount').addEventListener('input', (e) => {
+      let val = parseInt(e.target.value) || 1;
+      if(val < 1) val = 1;
+      if(val > 6) val = 6;
+      state.columns = val;
+      renderGrid();
+    });
+
+    document.getElementById('templateSelect').addEventListener('change', (e) => {
+      state.template = parseInt(e.target.value);
+      renderGrid();
+    });
+
+    /* ================= RENDER GRID ================= */
+    function renderGrid() {
+      grid.innerHTML = '';
+      
+      // Dynamic Responsive Columns
+      let perRow = state.columns;
+      if(window.innerWidth < 600) perRow = 1; 
+      else if(window.innerWidth < 900) perRow = Math.min(state.columns, 2); 
+      
+      grid.style.gridTemplateColumns = `repeat(${perRow}, 1fr)`;
+
+      for (let i = 0; i < state.columns; i++) {
+        const card = document.createElement('div');
+        card.className = 'card';
+
+        // --- TEMPLATE 1: Image + Pill Button ---
+        if (state.template === 1) {
+          card.innerHTML = `
+            <div class="img-frame" onclick="uploadImage(${i})">
+              ${state.images[i] ? `<img src="${state.images[i]}" alt="Custom">` : `<span>Click to upload image</span>`}
+            </div>
+            <button class="tap-btn" onclick="increment(${i}, this)">
+              ${state.counts[i]}
+            </button>
+          `;
+        } 
+        // --- TEMPLATE 2: Number + Tricky Vote Button ---
+        else if (state.template === 2) {
+          card.innerHTML = `
+            <div class="number-box">
+              ${state.counts[i]}
+            </div>
+            <button class="tap-btn vote-btn" onclick="increment(${i}, this)">
+              <span>VOTE</span>
+              <span>${state.counts[i]}</span>
+            </button>
+          `;
+        }
+        // --- TEMPLATE 3: Image + Circle Button ---
+        else if (state.template === 3) {
+          card.innerHTML = `
+            <div class="img-frame" onclick="uploadImage(${i})">
+              ${state.images[i] ? `<img src="${state.images[i]}" alt="Custom">` : `<span>Click to upload image</span>`}
+            </div>
+            <button class="tap-btn circle-btn" onclick="increment(${i}, this)">
+              <span style="font-size:0.9rem; font-weight:bold; margin-bottom:5px; letter-spacing:2px;">TAP</span>
+              <span>${state.counts[i]}</span>
+            </button>
+          `;
+        }
+
+        grid.appendChild(card);
+      }
+    }
+
+    /* ================= ACTIONS ================= */
+    
+    // Increment Logic
+    function increment(index, btnElement) {
+      state.counts[index]++;
+      
+      // Update UI Text based on Template
+      if(state.template === 2) {
+        btnElement.previousElementSibling.textContent = state.counts[index];
+        btnElement.children[1].textContent = state.counts[index];
+      } else if(state.template === 3) {
+        btnElement.children[1].textContent = state.counts[index];
+      } else {
+        btnElement.textContent = state.counts[index];
+      }
+
+      // Animation
+      btnElement.classList.remove('bump');
+      void btnElement.offsetWidth;
+      btnElement.classList.add('bump');
+
+      // Spawn +1 Floating Text
+      const rect = btnElement.getBoundingClientRect();
+      const plus = document.createElement('span');
+      plus.className = 'plus-one';
+      plus.textContent = '+1';
+      plus.style.left = '50%'; // Center of the button
+      plus.style.top = '50%';
+      btnElement.appendChild(plus);
+      setTimeout(() => plus.remove(), 800);
+    }
+
+    // Image Upload Logic
+    function uploadImage(index) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            state.images[index] = event.target.result;
+            renderGrid();
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+      input.click();
+    }
+
+    // Resize event for responsiveness
+    window.addEventListener('resize', renderGrid);
+
+    /* ================= INIT ================= */
+    renderGrid();
+
+  </script>
+</body>
+</html>
