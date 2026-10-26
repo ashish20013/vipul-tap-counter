@@ -2,14 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>Custom Tap Counter</title>
 <style>
   /* ================= BASE & VARIABLES ================= */
   * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
 
   :root {
-    /* Default Rich Red Background */
     --app-bg: #9e0b0b;
     --heading-color: #ffffff;
     --card-border: #4CAF50; 
@@ -21,26 +20,33 @@
   body {
     background-color: var(--app-bg);
     color: var(--heading-color);
-    min-height: 100vh;
+    height: 100dvh; /* Perfect for mobile & desktop */
     display: flex;
     flex-direction: column;
-    align-items: center;
-    padding: 10px 10px 20px 10px;
+    overflow: hidden; /* Prevents unwanted scrolling */
     transition: background-color 0.3s;
+  }
+
+  /* ================= APP CONTAINER ================= */
+  .app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    padding: 10px;
+    gap: 10px;
   }
 
   /* ================= HEADER ================= */
   .header {
     width: 100%;
-    max-width: 1200px;
     text-align: center;
-    margin-bottom: 15px;
-    position: relative;
-    padding-top: 10px;
+    flex-shrink: 0; /* Header won't shrink */
+    padding: 5px;
   }
 
   h1 {
-    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-size: clamp(1.4rem, 4vw, 2.2rem);
     font-weight: 700;
     outline: none;
     padding: 5px 10px;
@@ -51,36 +57,37 @@
   h1:focus { background: rgba(255,255,255,0.1); }
   h1:empty:before { content: "Click to add heading"; color: rgba(255,255,255,0.5); }
 
-  /* ================= GRID & CARDS ================= */
+  /* ================= GRID (Takes remaining space) ================= */
   .grid {
+    flex: 1; /* Fills remaining height */
     display: grid;
-    gap: 15px;
+    gap: 12px;
     width: 100%;
-    max-width: 1200px;
-    /* Makes the grid take up the remaining screen height */
-    min-height: calc(100vh - 100px); 
-    transition: grid-template-columns 0.3s;
+    overflow-y: auto; /* Scroll if too many columns */
+    align-content: stretch;
   }
 
+  /* ================= CARDS ================= */
   .card {
     border: 4px solid var(--card-border);
     border-radius: 20px;
-    padding: 15px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 12px;
     background: rgba(0, 0, 0, 0.15);
     backdrop-filter: blur(5px);
     position: relative;
     animation: fadeIn 0.4s ease-out;
     height: 100%;
+    min-height: 250px; /* Prevents extreme squishing */
   }
 
-  /* Image Frame - Stretches to fill space */
+  /* Image Frame - Dynamically stretches */
   .img-frame {
-    flex: 1; /* Takes up all available vertical space */
+    flex: 1; /* Takes all available height */
     width: 100%;
-    min-height: 200px;
+    min-height: 100px;
     border: 4px solid var(--img-border);
     border-radius: 12px;
     overflow: hidden;
@@ -94,19 +101,19 @@
   }
   .img-frame:hover { opacity: 0.8; }
   .img-frame img { width: 100%; height: 100%; object-fit: cover; }
-  .img-frame span { font-size: 1rem; color: rgba(255,255,255,0.7); text-align: center; padding: 10px; }
+  .img-frame span { font-size: 0.9rem; color: rgba(255,255,255,0.7); text-align: center; padding: 10px; }
 
   /* Number Box (For Template 2) */
   .number-box {
     flex: 1;
     width: 100%;
-    min-height: 200px;
+    min-height: 100px;
     border: 4px solid var(--img-border);
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: clamp(4rem, 15vw, 10rem);
+    font-size: clamp(3rem, 12vw, 8rem);
     font-weight: 900;
     color: var(--heading-color);
     background: rgba(0,0,0,0.3);
@@ -115,16 +122,17 @@
   /* ================= BUTTONS ================= */
   .tap-btn {
     width: 100%;
+    flex-shrink: 0; /* Button won't squish vertically */
     border: 4px solid var(--card-border);
     border-radius: 20px; 
     background: var(--btn-bg);
     color: var(--btn-text);
     
     /* Massive Number Size */
-    font-size: clamp(3rem, 12vw, 7rem); 
+    font-size: clamp(2.5rem, 10vw, 5rem); 
     font-weight: 900;
-    padding: 15px 10px;
-    line-height: 1.1;
+    padding: 10px;
+    line-height: 1;
     
     cursor: pointer;
     transition: transform 0.1s, box-shadow 0.2s;
@@ -137,18 +145,17 @@
     justify-content: center;
   }
 
-  .tap-btn:active {
-    transform: scale(0.95);
-  }
+  .tap-btn:active { transform: scale(0.95); }
 
   /* Template 2: Tricky Vote Button */
   .vote-btn {
     border-radius: 15px;
-    font-size: clamp(1.5rem, 5vw, 3rem); 
+    font-size: clamp(1.2rem, 4vw, 2.5rem); 
     text-transform: uppercase;
     letter-spacing: 2px;
     box-shadow: 0 8px 0 var(--card-border);
     flex-direction: column;
+    padding: 15px 10px;
   }
   .vote-btn:active {
     transform: translateY(8px);
@@ -157,17 +164,17 @@
 
   /* Template 3: Round Tally Button */
   .circle-btn {
-    width: clamp(180px, 35vw, 300px);
-    height: clamp(180px, 35vw, 300px);
+    width: clamp(120px, 25vw, 200px);
+    height: clamp(120px, 25vw, 200px);
     border-radius: 50%;
-    font-size: clamp(3rem, 10vw, 6rem);
+    font-size: clamp(2.5rem, 8vw, 4rem);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     align-self: center;
-    margin-top: 10px;
     padding: 0;
+    flex-shrink: 0;
   }
 
   /* Floating +1 Animation */
@@ -175,7 +182,7 @@
     position: absolute;
     color: var(--btn-text);
     font-weight: 900;
-    font-size: clamp(2rem, 8vw, 4rem);
+    font-size: clamp(1.5rem, 6vw, 3rem);
     pointer-events: none;
     animation: floatUp 0.8s ease-out forwards;
     text-shadow: 0 0 10px rgba(0,0,0,0.5);
@@ -186,8 +193,8 @@
     position: fixed;
     top: 0;
     right: 0;
-    width: 40px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
     background: transparent;
     border: none;
     z-index: 100;
@@ -197,19 +204,18 @@
     justify-content: center;
   }
 
-  /* The Tiny Faint Dot */
   .settings-toggle::after {
     content: "";
     width: 8px;
     height: 8px;
-    background: rgba(255, 255, 255, 0.15); /* Barely visible */
+    background: rgba(255, 255, 255, 0.15);
     border-radius: 50%;
     transition: 0.3s;
   }
 
   .settings-toggle:hover::after,
   .settings-toggle:active::after {
-    background: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.9);
     transform: scale(1.5);
   }
 
@@ -219,7 +225,8 @@
     top: 0;
     right: -350px;
     width: 320px;
-    height: 100%;
+    max-width: 100vw;
+    height: 100dvh;
     background: #1a1a1a;
     color: #fff;
     padding: 25px;
@@ -242,6 +249,20 @@
   .setting-group select, .setting-group input[type="number"] {
     width: 100%; padding: 10px; border-radius: 6px; border: none; background: #333; color: white;
   }
+
+  .panel-btn {
+    width: 100%; 
+    padding: 12px; 
+    margin-top: 5px; 
+    background: #333; 
+    color: white; 
+    border: 1px solid #555; 
+    border-radius: 6px; 
+    cursor: pointer; 
+    font-weight: bold;
+    transition: 0.2s;
+  }
+  .panel-btn:hover { background: #444; }
 
   /* ================= ANIMATIONS ================= */
   @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -306,16 +327,24 @@
       <label>Image Frame Border Color</label>
       <input type="color" id="imgBorderColor" value="#4CAF50">
     </div>
+
+    <!-- FULL SCREEN BUTTON ADDED HERE -->
+    <div class="setting-group" style="margin-top: 20px; border-top: 1px solid #333; padding-top: 15px;">
+      <label>Screen Mode</label>
+      <button id="toggleFullscreenBtn" class="panel-btn">⛶ Enter Full Screen</button>
+    </div>
     
-    <button id="closeSettings" style="width:100%; padding:12px; margin-top:20px; background:#e53935; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Close</button>
+    <button id="closeSettings" style="width:100%; padding:12px; margin-top:15px; background:#e53935; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">Close</button>
   </div>
 
-  <!-- Main App -->
-  <div class="header">
-    <h1 id="mainHeading" contenteditable="true">Custom Text, Can Edit User</h1>
-  </div>
+  <!-- Main App Container -->
+  <div class="app-container">
+    <div class="header">
+      <h1 id="mainHeading" contenteditable="true">Custom Text, Can Edit User</h1>
+    </div>
 
-  <div class="grid" id="gridContainer"></div>
+    <div class="grid" id="gridContainer"></div>
+  </div>
 
   <script>
     /* ================= STATE ================= */
@@ -331,11 +360,34 @@
     const toggleBtn = document.getElementById('settingsToggle');
     const panel = document.getElementById('settingsPanel');
     const closeBtn = document.getElementById('closeSettings');
+    const fullscreenBtn = document.getElementById('toggleFullscreenBtn');
 
     /* ================= SETTINGS LOGIC ================= */
     toggleBtn.addEventListener('click', () => panel.classList.add('open'));
     closeBtn.addEventListener('click', () => panel.classList.remove('open'));
 
+    // Fullscreen Logic
+    fullscreenBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          console.log(`Error: ${err.message}`);
+        });
+        fullscreenBtn.innerHTML = "⛶ Exit Full Screen";
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+          fullscreenBtn.innerHTML = "⛶ Enter Full Screen";
+        }
+      }
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement) {
+        fullscreenBtn.innerHTML = "⛶ Enter Full Screen";
+      }
+    });
+
+    // Color Inputs
     document.getElementById('bgColor').addEventListener('input', (e) => {
       document.documentElement.style.setProperty('--app-bg', e.target.value);
     });
@@ -355,6 +407,7 @@
       document.documentElement.style.setProperty('--img-border', e.target.value);
     });
 
+    // Column Input
     document.getElementById('colCount').addEventListener('input', (e) => {
       let val = parseInt(e.target.value) || 1;
       if(val < 1) val = 1;
@@ -363,6 +416,7 @@
       renderGrid();
     });
 
+    // Template Input
     document.getElementById('templateSelect').addEventListener('change', (e) => {
       state.template = parseInt(e.target.value);
       renderGrid();
@@ -372,12 +426,23 @@
     function renderGrid() {
       grid.innerHTML = '';
       
-      // Dynamic Responsive Columns
+      // Dynamic Responsive Logic
       let perRow = state.columns;
-      if(window.innerWidth < 600) perRow = 1; 
-      else if(window.innerWidth < 900) perRow = Math.min(state.columns, 2); 
+      if(window.innerWidth < 600) {
+        perRow = 1; // Mobile -> Force 1 column
+      } else if(window.innerWidth < 900) {
+        perRow = Math.min(state.columns, 2); // Tablet -> Max 2 columns
+      }
       
       grid.style.gridTemplateColumns = `repeat(${perRow}, 1fr)`;
+
+      // If only 1 column on desktop, limit max-width of card to look good
+      if (perRow === 1 && window.innerWidth >= 900) {
+        grid.style.gridTemplateColumns = `minmax(300px, 600px)`;
+        grid.style.justifyContent = 'center';
+      } else {
+        grid.style.justifyContent = 'stretch';
+      }
 
       for (let i = 0; i < state.columns; i++) {
         const card = document.createElement('div');
@@ -413,7 +478,7 @@
               ${state.images[i] ? `<img src="${state.images[i]}" alt="Custom">` : `<span>Click to upload image</span>`}
             </div>
             <button class="tap-btn circle-btn" onclick="increment(${i}, this)">
-              <span style="font-size:0.9rem; font-weight:bold; margin-bottom:5px; letter-spacing:2px;">TAP</span>
+              <span style="font-size:0.8rem; font-weight:bold; margin-bottom:5px; letter-spacing:2px;">TAP</span>
               <span>${state.counts[i]}</span>
             </button>
           `;
@@ -429,7 +494,6 @@
     function increment(index, btnElement) {
       state.counts[index]++;
       
-      // Update UI Text based on Template
       if(state.template === 2) {
         btnElement.previousElementSibling.textContent = state.counts[index];
         btnElement.children[1].textContent = state.counts[index];
@@ -439,17 +503,16 @@
         btnElement.textContent = state.counts[index];
       }
 
-      // Animation
+      // Animation Bump
       btnElement.classList.remove('bump');
       void btnElement.offsetWidth;
       btnElement.classList.add('bump');
 
-      // Spawn +1 Floating Text
-      const rect = btnElement.getBoundingClientRect();
+      // Floating +1 Text
       const plus = document.createElement('span');
       plus.className = 'plus-one';
       plus.textContent = '+1';
-      plus.style.left = '50%'; // Center of the button
+      plus.style.left = '50%';
       plus.style.top = '50%';
       btnElement.appendChild(plus);
       setTimeout(() => plus.remove(), 800);
@@ -474,7 +537,7 @@
       input.click();
     }
 
-    // Resize event for responsiveness
+    // Re-render on resize to fix responsiveness automatically
     window.addEventListener('resize', renderGrid);
 
     /* ================= INIT ================= */
